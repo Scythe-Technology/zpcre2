@@ -1,0 +1,13 @@
+.{
+    .name = "zpcre2",
+    .version = "0.0.1",
+    .dependencies = .{},
+    .paths = .{
+        "pcre2",
+        "src",
+        "build.zig",
+        "build.zig.zon",
+        "LICENSE.md",
+        "PCRE2-LICENCE.md",
+    },
+}
