@@ -115,7 +115,7 @@ pub const Code = extern struct {
     }
 
     fn checkUTF(self: *const Code, subject: []const u8) !void {
-        if (self.compile_options & Options.PCRE2_UTF != 0)
+        if (self.compile_options & Options.UTF != 0)
             if (!std.unicode.utf8ValidateSlice(subject))
                 return error.InvalidUtf8;
     }
@@ -127,7 +127,7 @@ pub const Code = extern struct {
         try code.checkUTF(subject);
         const match_data = try createMatchData(code, null);
         defer match_data.deinit();
-        const rc = pcre2_match_8(code, subject.ptr, subject.len, 0, Options.PCRE2_ANCHORED | Options.PCRE2_ENDANCHORED, match_data, null);
+        const rc = pcre2_match_8(code, subject.ptr, subject.len, 0, Options.ANCHORED | Options.ENDANCHORED, match_data, null);
         if (rc < 0) {
             const err: MatchingError = @enumFromInt(rc);
             if (err == .NOMATCH)
@@ -214,7 +214,7 @@ pub const Code = extern struct {
         allocator: std.mem.Allocator,
         subject: []const u8,
     ) !?Result {
-        return matchOnce(code, allocator, subject, Options.PCRE2_ANCHORED | Options.PCRE2_ENDANCHORED);
+        return matchOnce(code, allocator, subject, Options.ANCHORED | Options.ENDANCHORED);
     }
 
     pub fn search(
@@ -246,7 +246,7 @@ pub const Code = extern struct {
         code: *const Code,
         subject: []const u8,
     ) !Iterator {
-        return newIterator(code, subject, Options.PCRE2_ANCHORED | Options.PCRE2_ENDANCHORED);
+        return newIterator(code, subject, Options.ANCHORED | Options.ENDANCHORED);
     }
 
     pub fn searchIterator(
@@ -305,7 +305,7 @@ pub const Code = extern struct {
         defer match_data.deinit();
 
         var buffer: [4096]u8 = undefined;
-        const in_options = options | Options.PCRE2_SUBSTITUTE_OVERFLOW_LENGTH;
+        const in_options = options | Options.SUBSTITUTE_OVERFLOW_LENGTH;
 
         var out_len: usize = buffer.len;
         const rc = pcre2_substitute_8(
@@ -350,15 +350,15 @@ pub const Code = extern struct {
     }
 
     pub fn allocReplace(code: *const Code, allocator: std.mem.Allocator, subject: []const u8, replacement: []const u8) ![]u8 {
-        return code.subsitute(allocator, subject, replacement, Options.PCRE2_SUBSTITUTE_EXTENDED);
+        return code.subsitute(allocator, subject, replacement, Options.SUBSTITUTE_EXTENDED);
     }
 
     pub fn allocReplaceAll(code: *const Code, allocator: std.mem.Allocator, subject: []const u8, replacement: []const u8) ![]u8 {
-        return code.subsitute(allocator, subject, replacement, Options.PCRE2_SUBSTITUTE_EXTENDED | Options.PCRE2_SUBSTITUTE_GLOBAL);
+        return code.subsitute(allocator, subject, replacement, Options.SUBSTITUTE_EXTENDED | Options.SUBSTITUTE_GLOBAL);
     }
 
     pub fn allocFormat(code: *const Code, allocator: std.mem.Allocator, subject: []const u8, replacement: []const u8) ![]u8 {
-        return code.subsitute(allocator, subject, replacement, Options.PCRE2_SUBSTITUTE_EXTENDED | Options.PCRE2_SUBSTITUTE_REPLACEMENT_ONLY | Options.PCRE2_SUBSTITUTE_GLOBAL);
+        return code.subsitute(allocator, subject, replacement, Options.SUBSTITUTE_EXTENDED | Options.SUBSTITUTE_REPLACEMENT_ONLY | Options.SUBSTITUTE_GLOBAL);
     }
 
     pub const deinit = pcre2_code_free_8;
@@ -373,57 +373,57 @@ pub fn compile(pattern: []const u8, options: u32, offset: *usize) !*Code {
 }
 
 pub const Options = struct {
-    pub const PCRE2_ANCHORED = 0x80000000;
-    pub const PCRE2_NO_UTF_CHECK = 0x40000000;
-    pub const PCRE2_ENDANCHORED = 0x20000000;
-    pub const PCRE2_ALLOW_EMPTY_CLASS = 0x00000001;
-    pub const PCRE2_ALT_BSUX = 0x00000002;
-    pub const PCRE2_AUTO_CALLOUT = 0x00000004;
-    pub const PCRE2_CASELESS = 0x00000008;
-    pub const PCRE2_DOLLAR_ENDONLY = 0x00000010;
-    pub const PCRE2_DOTALL = 0x00000020;
-    pub const PCRE2_DUPNAMES = 0x00000040;
-    pub const PCRE2_EXTENDED = 0x00000080;
-    pub const PCRE2_FIRSTLINE = 0x00000100;
-    pub const PCRE2_MATCH_UNSET_BACKREF = 0x00000200;
-    pub const PCRE2_MULTILINE = 0x00000400;
-    pub const PCRE2_NEVER_UCP = 0x00000800;
-    pub const PCRE2_NEVER_UTF = 0x00001000;
-    pub const PCRE2_NO_AUTO_CAPTURE = 0x00002000;
-    pub const PCRE2_NO_AUTO_POSSESS = 0x00004000;
-    pub const PCRE2_NO_DOTSTAR_ANCHOR = 0x00008000;
-    pub const PCRE2_NO_START_OPTIMIZE = 0x00010000;
-    pub const PCRE2_UCP = 0x00020000;
-    pub const PCRE2_UNGREEDY = 0x00040000;
-    pub const PCRE2_UTF = 0x00080000;
-    pub const PCRE2_NEVER_BACKSLASH_C = 0x00100000;
-    pub const PCRE2_ALT_CIRCUMFLEX = 0x00200000;
-    pub const PCRE2_ALT_VERBNAMES = 0x00400000;
-    pub const PCRE2_USE_OFFSET_LIMIT = 0x00800000;
-    pub const PCRE2_EXTENDED_MORE = 0x01000000;
-    pub const PCRE2_LITERAL = 0x02000000;
-    pub const PCRE2_MATCH_INVALID_UTF = 0x04000000;
-    pub const PCRE2_ALT_EXTENDED_CLASS = 0x08000000;
+    pub const ANCHORED = 0x80000000;
+    pub const NO_UTF_CHECK = 0x40000000;
+    pub const ENDANCHORED = 0x20000000;
+    pub const ALLOW_EMPTY_CLASS = 0x00000001;
+    pub const ALT_BSUX = 0x00000002;
+    pub const AUTO_CALLOUT = 0x00000004;
+    pub const CASELESS = 0x00000008;
+    pub const DOLLAR_ENDONLY = 0x00000010;
+    pub const DOTALL = 0x00000020;
+    pub const DUPNAMES = 0x00000040;
+    pub const EXTENDED = 0x00000080;
+    pub const FIRSTLINE = 0x00000100;
+    pub const MATCH_UNSET_BACKREF = 0x00000200;
+    pub const MULTILINE = 0x00000400;
+    pub const NEVER_UCP = 0x00000800;
+    pub const NEVER_UTF = 0x00001000;
+    pub const NO_AUTO_CAPTURE = 0x00002000;
+    pub const NO_AUTO_POSSESS = 0x00004000;
+    pub const NO_DOTSTAR_ANCHOR = 0x00008000;
+    pub const NO_START_OPTIMIZE = 0x00010000;
+    pub const UCP = 0x00020000;
+    pub const UNGREEDY = 0x00040000;
+    pub const UTF = 0x00080000;
+    pub const NEVER_BACKSLASH_C = 0x00100000;
+    pub const ALT_CIRCUMFLEX = 0x00200000;
+    pub const ALT_VERBNAMES = 0x00400000;
+    pub const USE_OFFSET_LIMIT = 0x00800000;
+    pub const EXTENDED_MORE = 0x01000000;
+    pub const LITERAL = 0x02000000;
+    pub const MATCH_INVALID_UTF = 0x04000000;
+    pub const ALT_EXTENDED_CLASS = 0x08000000;
 
-    pub const PCRE2_NOTBOL = 0x00000001;
-    pub const PCRE2_NOTEOL = 0x00000002;
-    pub const PCRE2_NOTEMPTY = 0x00000004;
-    pub const PCRE2_NOTEMPTY_ATSTART = 0x00000008;
-    pub const PCRE2_PARTIAL_SOFT = 0x00000010;
-    pub const PCRE2_PARTIAL_HARD = 0x00000020;
-    pub const PCRE2_DFA_RESTART = 0x00000040;
-    pub const PCRE2_DFA_SHORTEST = 0x00000080;
-    pub const PCRE2_SUBSTITUTE_GLOBAL = 0x00000100;
-    pub const PCRE2_SUBSTITUTE_EXTENDED = 0x00000200;
-    pub const PCRE2_SUBSTITUTE_UNSET_EMPTY = 0x00000400;
-    pub const PCRE2_SUBSTITUTE_UNKNOWN_UNSET = 0x00000800;
-    pub const PCRE2_SUBSTITUTE_OVERFLOW_LENGTH = 0x00001000;
-    pub const PCRE2_NO_JIT = 0x00002000;
-    pub const PCRE2_COPY_MATCHED_SUBJECT = 0x00004000;
-    pub const PCRE2_SUBSTITUTE_LITERAL = 0x00008000;
-    pub const PCRE2_SUBSTITUTE_MATCHED = 0x00010000;
-    pub const PCRE2_SUBSTITUTE_REPLACEMENT_ONLY = 0x00020000;
-    pub const PCRE2_DISABLE_RECURSELOOP_CHECK = 0x00040000;
+    pub const NOTBOL = 0x00000001;
+    pub const NOTEOL = 0x00000002;
+    pub const NOTEMPTY = 0x00000004;
+    pub const NOTEMPTY_ATSTART = 0x00000008;
+    pub const PARTIAL_SOFT = 0x00000010;
+    pub const PARTIAL_HARD = 0x00000020;
+    pub const DFA_RESTART = 0x00000040;
+    pub const DFA_SHORTEST = 0x00000080;
+    pub const SUBSTITUTE_GLOBAL = 0x00000100;
+    pub const SUBSTITUTE_EXTENDED = 0x00000200;
+    pub const SUBSTITUTE_UNSET_EMPTY = 0x00000400;
+    pub const SUBSTITUTE_UNKNOWN_UNSET = 0x00000800;
+    pub const SUBSTITUTE_OVERFLOW_LENGTH = 0x00001000;
+    pub const NO_JIT = 0x00002000;
+    pub const COPY_MATCHED_SUBJECT = 0x00004000;
+    pub const SUBSTITUTE_LITERAL = 0x00008000;
+    pub const SUBSTITUTE_MATCHED = 0x00010000;
+    pub const SUBSTITUTE_REPLACEMENT_ONLY = 0x00020000;
+    pub const DISABLE_RECURSELOOP_CHECK = 0x00040000;
 };
 
 pub const Info = struct {
@@ -434,8 +434,8 @@ pub const Info = struct {
     /// Number of highest backreference
     pub const BackrefMax = 2;
     /// What \R matches:
-    ///  - PCRE2_BSR_UNICODE: Unicode line endings
-    ///  - PCRE2_BSR_ANYCRLF: CR, LF, or CRLF only
+    ///  - BSR_UNICODE: Unicode line endings
+    ///  - BSR_ANYCRLF: CR, LF, or CRLF only
     pub const BSR = 3;
     /// Number of capturing subpatterns
     pub const CaptureCount = 4;
@@ -464,7 +464,7 @@ pub const Info = struct {
     /// Pointer to name table
     pub const NameTable = 19;
     pub const Newline = 20;
-    ///  Backtracking depth limit if set, otherwise PCRE2_ERROR_UNSET
+    ///  Backtracking depth limit if set, otherwise ERROR_UNSET
     pub const DepthLimit = 21;
     pub const RecursionLimit = 21;
     /// Size of compiled pattern
@@ -891,7 +891,7 @@ test "isMatch" {
 
 test "isMatch (unicode)" {
     var pos: usize = 0;
-    var re = try compile("🍕+", Options.PCRE2_UTF, &pos);
+    var re = try compile("🍕+", Options.UTF, &pos);
     defer re.deinit();
 
     try std.testing.expect(try re.isMatch("🍕🍕🍕"));
@@ -925,7 +925,7 @@ test "Match (unicode)" {
     const allocator = std.testing.allocator;
 
     var pos: usize = 0;
-    const regex = try compile("a(🍕+)c", Options.PCRE2_UTF, &pos);
+    const regex = try compile("a(🍕+)c", Options.UTF, &pos);
     defer regex.deinit();
 
     if (try regex.match(allocator, "a🍕🍕🍕c")) |m| {
@@ -973,7 +973,7 @@ test "Workaround Match" {
 test "Workaround Match (unicode)" {
     const allocator = std.testing.allocator;
     var pos: usize = 0;
-    var re = try compile("\\s*(a(🍕+)c)\\s*", Options.PCRE2_UTF, &pos);
+    var re = try compile("\\s*(a(🍕+)c)\\s*", Options.UTF, &pos);
     defer re.deinit();
 
     if (try re.match(allocator, "a🍕🍕🍕c")) |m| {
@@ -1027,7 +1027,7 @@ test "Search (unicode)" {
     const allocator = std.testing.allocator;
 
     var pos: usize = 0;
-    const regex = try compile("a(🍕+)c", Options.PCRE2_UTF, &pos);
+    const regex = try compile("a(🍕+)c", Options.UTF, &pos);
     defer regex.deinit();
 
     if (try regex.search(allocator, "a🍕🍕🍕c")) |m| {
@@ -1074,7 +1074,7 @@ test "Replace (unicode)" {
     const allocator = std.testing.allocator;
 
     var pos: usize = 0;
-    const regex = try compile("🍕+", Options.PCRE2_UTF, &pos);
+    const regex = try compile("🍕+", Options.UTF, &pos);
     defer regex.deinit();
 
     const result1 = try regex.allocReplace(allocator, "a🍕🍕🍕c", "$0");
@@ -1116,7 +1116,7 @@ test "ReplaceAll (unicode)" {
     const allocator = std.testing.allocator;
 
     var pos: usize = 0;
-    const regex = try compile("🍕+", Options.PCRE2_UTF, &pos);
+    const regex = try compile("🍕+", Options.UTF, &pos);
     defer regex.deinit();
 
     const result1 = try regex.allocReplaceAll(allocator, "a🍕🍕🍕c", "$0");
@@ -1137,7 +1137,7 @@ test "ReplaceAll CaseInsensitive" {
     const allocator = std.testing.allocator;
 
     var pos: usize = 0;
-    const regex = try compile("^(a)(b+)(c)$", Options.PCRE2_CASELESS, &pos);
+    const regex = try compile("^(a)(b+)(c)$", Options.CASELESS, &pos);
     defer regex.deinit();
 
     const result1 = try regex.allocReplaceAll(allocator, "ABBBC", "$0");
@@ -1161,7 +1161,7 @@ test "ReplaceAll CaseInsensitive (unicode)" {
     const allocator = std.testing.allocator;
 
     var pos: usize = 0;
-    const regex = try compile("^(a)(🍕+)(c)$", Options.PCRE2_CASELESS | Options.PCRE2_UTF, &pos);
+    const regex = try compile("^(a)(🍕+)(c)$", Options.CASELESS | Options.UTF, &pos);
     defer regex.deinit();
 
     const result1 = try regex.allocReplaceAll(allocator, "A🍕🍕🍕C", "$0");
@@ -1185,7 +1185,7 @@ test "ReplaceAll CaseInsensitive Multiline" {
     const allocator = std.testing.allocator;
 
     var pos: usize = 0;
-    const regex = try compile("^(a)(b+)(c)$", Options.PCRE2_CASELESS | Options.PCRE2_MULTILINE, &pos);
+    const regex = try compile("^(a)(b+)(c)$", Options.CASELESS | Options.MULTILINE, &pos);
     defer regex.deinit();
 
     const result1 = try regex.allocReplaceAll(allocator, "ABBBC\nABBBC", "$0");
@@ -1206,7 +1206,7 @@ test "ReplaceAll CaseInsensitive Multiline (unicode)" {
     const allocator = std.testing.allocator;
 
     var pos: usize = 0;
-    const regex = try compile("^(a)(🍕+)(c)$", Options.PCRE2_CASELESS | Options.PCRE2_UTF | Options.PCRE2_MULTILINE, &pos);
+    const regex = try compile("^(a)(🍕+)(c)$", Options.CASELESS | Options.UTF | Options.MULTILINE, &pos);
     defer regex.deinit();
 
     const result1 = try regex.allocReplaceAll(allocator, "A🍕🍕🍕C\nA🍕🍕🍕C", "$0");
@@ -1242,7 +1242,7 @@ test "Format (unicode)" {
     const allocator = std.testing.allocator;
 
     var pos: usize = 0;
-    const regex = try compile("🍕+", Options.PCRE2_UTF, &pos);
+    const regex = try compile("🍕+", Options.UTF, &pos);
     defer regex.deinit();
 
     const result1 = try regex.allocFormat(allocator, "a🍕🍕🍕c", "$0");
@@ -1283,7 +1283,7 @@ test "Strict Search (unicode)" {
     const allocator = std.testing.allocator;
 
     var pos: usize = 0;
-    const regex = try compile("^a(🍕+)c$", Options.PCRE2_UTF, &pos);
+    const regex = try compile("^a(🍕+)c$", Options.UTF, &pos);
     defer regex.deinit();
 
     if (try regex.search(allocator, "a🍕🍕🍕c")) |m| {
@@ -1328,7 +1328,7 @@ test "subsitute - replaceAll" {
 
     const subject = "foobar foobaz foo";
     const replacement = "baz$1";
-    const result = try regex.subsitute(allocator, subject, replacement, Options.PCRE2_SUBSTITUTE_GLOBAL);
+    const result = try regex.subsitute(allocator, subject, replacement, Options.SUBSTITUTE_GLOBAL);
     defer allocator.free(result);
     try std.testing.expectEqualStrings("bazfoo bazfoobaz bazfoo", result);
 }
