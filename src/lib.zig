@@ -1,20 +1,20 @@
 const std = @import("std");
 
-extern fn pcre2_match_data_free_8(match_data: *pcre2_match_data) callconv(.C) void;
-extern fn pcre2_get_ovector_pointer_8(match_data: *pcre2_match_data) callconv(.C) [*]isize;
-extern fn pcre2_get_ovector_count_8(match_data: *pcre2_match_data) callconv(.C) u32;
+extern fn pcre2_match_data_free_8(match_data: *MatchData) callconv(.C) void;
+extern fn pcre2_get_ovector_pointer_8(match_data: *MatchData) callconv(.C) [*]isize;
+extern fn pcre2_get_ovector_count_8(match_data: *MatchData) callconv(.C) u32;
 extern fn pcre2_match_data_create_from_pattern_8(
-    code: *const pcre2_code,
-    gcontext: ?*pcre2_general_context,
-) callconv(.C) ?*pcre2_match_data;
+    code: *const Code,
+    gcontext: ?*GeneralContext,
+) callconv(.C) ?*MatchData;
 extern fn pcre2_match_8(
-    code: *const pcre2_code,
+    code: *const Code,
     subject: [*]const u8,
     len: usize,
     offset: usize,
     options: u32,
-    match_data: *pcre2_match_data,
-    mcontext: ?*pcre2_match_context,
+    match_data: *MatchData,
+    mcontext: ?*MatchContext,
 ) callconv(.C) c_int;
 extern fn pcre2_compile_8(
     pattern: [*]const u8,
@@ -22,45 +22,45 @@ extern fn pcre2_compile_8(
     options: u32,
     errorcode: *c_int,
     erroroffset: *usize,
-    context: ?*pcre2_compile_context,
-) callconv(.C) ?*pcre2_code;
+    context: ?*CompileContext,
+) callconv(.C) ?*Code;
 extern fn pcre2_substitute_8(
-    code: *const pcre2_code,
+    code: *const Code,
     subject: [*]const u8,
     len: usize,
     start_offset: usize,
     options: u32,
-    match_data: ?*pcre2_match_data,
-    mcontext: ?*pcre2_match_context,
+    match_data: ?*MatchData,
+    mcontext: ?*MatchContext,
     replacement: [*]const u8,
     replace_len: usize,
     buffer: [*]u8,
     buffer_len: *usize,
 ) callconv(.C) c_int;
 extern fn pcre2_pattern_info_8(
-    code: *const pcre2_code,
+    code: *const Code,
     what: u32,
     where: *anyopaque,
 ) callconv(.C) c_int;
-extern fn pcre2_code_free_8(code: *pcre2_code) callconv(.C) void;
+extern fn pcre2_code_free_8(code: *Code) callconv(.C) void;
 extern fn pcre2_get_error_message_8(errorcode: c_int, buffer: [*]u8, bufflen: usize) callconv(.C) c_int;
 
-pub const pcre2_general_context = opaque {};
-pub const pcre2_match_data = opaque {
+pub const GeneralContext = opaque {};
+pub const MatchData = opaque {
     pub const deinit = pcre2_match_data_free_8;
 };
-pub const pcre2_compile_context = opaque {};
-pub const pcre2_match_context = opaque {};
+pub const CompileContext = opaque {};
+pub const MatchContext = opaque {};
 
-pub const pcre2_memctl = extern struct {
+pub const MemCtl = extern struct {
     malloc: *const fn (usize, *anyopaque) callconv(.c) *anyopaque,
     free: *const fn (*anyopaque, *anyopaque) callconv(.c) void,
     memory_data: *anyopaque,
 };
 
-pub const pcre2_code = extern struct {
+pub const Code = extern struct {
     /// Memory control fields
-    memctl: pcre2_memctl,
+    memctl: MemCtl,
     /// The character tables
     tables: [*]const u8,
     /// Pointer to JIT code
@@ -110,18 +110,18 @@ pub const pcre2_code = extern struct {
     /// Optimizations enabled at compile time
     optimization_flags: u32,
 
-    fn createMatchData(self: *const pcre2_code, gcontext: ?*pcre2_general_context) !*pcre2_match_data {
+    fn createMatchData(self: *const Code, gcontext: ?*GeneralContext) !*MatchData {
         return pcre2_match_data_create_from_pattern_8(self, gcontext) orelse return error.OutOfMemory;
     }
 
-    fn checkUTF(self: *const pcre2_code, subject: []const u8) !void {
+    fn checkUTF(self: *const Code, subject: []const u8) !void {
         if (self.compile_options & Options.PCRE2_UTF != 0)
             if (!std.unicode.utf8ValidateSlice(subject))
                 return error.InvalidUtf8;
     }
 
     pub fn isMatch(
-        code: *const pcre2_code,
+        code: *const Code,
         subject: []const u8,
     ) !bool {
         try code.checkUTF(subject);
@@ -138,8 +138,8 @@ pub const pcre2_code = extern struct {
     }
 
     fn inner_match(
-        code: *const pcre2_code,
-        match_data: *pcre2_match_data,
+        code: *const Code,
+        match_data: *MatchData,
         allocator: std.mem.Allocator,
         subject: []const u8,
         offset: usize,
@@ -198,7 +198,7 @@ pub const pcre2_code = extern struct {
     }
 
     pub fn matchOnce(
-        code: *const pcre2_code,
+        code: *const Code,
         allocator: std.mem.Allocator,
         subject: []const u8,
         options: u32,
@@ -210,7 +210,7 @@ pub const pcre2_code = extern struct {
     }
 
     pub fn match(
-        code: *const pcre2_code,
+        code: *const Code,
         allocator: std.mem.Allocator,
         subject: []const u8,
     ) !?Result {
@@ -218,7 +218,7 @@ pub const pcre2_code = extern struct {
     }
 
     pub fn search(
-        code: *const pcre2_code,
+        code: *const Code,
         allocator: std.mem.Allocator,
         subject: []const u8,
     ) !?Result {
@@ -226,7 +226,7 @@ pub const pcre2_code = extern struct {
     }
 
     pub fn newIterator(
-        code: *const pcre2_code,
+        code: *const Code,
         subject: []const u8,
         options: u32,
     ) !Iterator {
@@ -243,14 +243,14 @@ pub const pcre2_code = extern struct {
     }
 
     pub fn matchIterator(
-        code: *const pcre2_code,
+        code: *const Code,
         subject: []const u8,
     ) !Iterator {
         return newIterator(code, subject, Options.PCRE2_ANCHORED | Options.PCRE2_ENDANCHORED);
     }
 
     pub fn searchIterator(
-        code: *const pcre2_code,
+        code: *const Code,
         subject: []const u8,
     ) !Iterator {
         return newIterator(code, subject, 0);
@@ -274,10 +274,10 @@ pub const pcre2_code = extern struct {
     };
 
     pub const Iterator = struct {
-        code: *const pcre2_code,
+        code: *const Code,
         subject: []const u8,
         offset: usize,
-        match_data: *pcre2_match_data,
+        match_data: *MatchData,
         options: u32,
 
         pub fn next(self: *Iterator, allocator: std.mem.Allocator) !?Result {
@@ -293,7 +293,7 @@ pub const pcre2_code = extern struct {
     };
 
     pub fn subsitute(
-        code: *const pcre2_code,
+        code: *const Code,
         allocator: std.mem.Allocator,
         subject: []const u8,
         replacement: []const u8,
@@ -349,22 +349,22 @@ pub const pcre2_code = extern struct {
         return allocator.dupe(u8, buffer[0..out_len]);
     }
 
-    pub fn allocReplace(code: *const pcre2_code, allocator: std.mem.Allocator, subject: []const u8, replacement: []const u8) ![]u8 {
+    pub fn allocReplace(code: *const Code, allocator: std.mem.Allocator, subject: []const u8, replacement: []const u8) ![]u8 {
         return code.subsitute(allocator, subject, replacement, Options.PCRE2_SUBSTITUTE_EXTENDED);
     }
 
-    pub fn allocReplaceAll(code: *const pcre2_code, allocator: std.mem.Allocator, subject: []const u8, replacement: []const u8) ![]u8 {
+    pub fn allocReplaceAll(code: *const Code, allocator: std.mem.Allocator, subject: []const u8, replacement: []const u8) ![]u8 {
         return code.subsitute(allocator, subject, replacement, Options.PCRE2_SUBSTITUTE_EXTENDED | Options.PCRE2_SUBSTITUTE_GLOBAL);
     }
 
-    pub fn allocFormat(code: *const pcre2_code, allocator: std.mem.Allocator, subject: []const u8, replacement: []const u8) ![]u8 {
+    pub fn allocFormat(code: *const Code, allocator: std.mem.Allocator, subject: []const u8, replacement: []const u8) ![]u8 {
         return code.subsitute(allocator, subject, replacement, Options.PCRE2_SUBSTITUTE_EXTENDED | Options.PCRE2_SUBSTITUTE_REPLACEMENT_ONLY | Options.PCRE2_SUBSTITUTE_GLOBAL);
     }
 
     pub const deinit = pcre2_code_free_8;
 };
 
-pub fn compile(pattern: []const u8, options: u32, offset: *usize) !*pcre2_code {
+pub fn compile(pattern: []const u8, options: u32, offset: *usize) !*Code {
     var errorcode: c_int = 0;
     return pcre2_compile_8(pattern.ptr, pattern.len, options, &errorcode, offset, null) orelse {
         const err: CompileError = @enumFromInt(errorcode);
