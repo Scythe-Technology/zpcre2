@@ -142,10 +142,10 @@ pub const Code = extern struct {
         match_data: *MatchData,
         allocator: std.mem.Allocator,
         subject: []const u8,
-        offset: usize,
+        offset: ?*usize,
         options: u32,
     ) !?Result {
-        const rc = pcre2_match_8(code, subject.ptr, subject.len, offset, options, match_data, null);
+        const rc = pcre2_match_8(code, subject.ptr, subject.len, if (offset) |o| o.* else 0, options, match_data, null);
         if (rc < 0) {
             const err: MatchingError = @enumFromInt(rc);
             if (err == .NOMATCH)
@@ -172,6 +172,9 @@ pub const Code = extern struct {
                 .slice = subject[@intCast(start)..@intCast(end)],
             };
         }
+
+        if (offset) |o|
+            o.* = @intCast(ovector[1]);
 
         var namecount: u32 = 0;
         _ = pcre2_pattern_info_8(code, Info.NameCount, @ptrCast(@alignCast(&namecount)));
@@ -206,7 +209,7 @@ pub const Code = extern struct {
         try code.checkUTF(subject);
         const match_data = try createMatchData(code, null);
         defer match_data.deinit();
-        return code.inner_match(match_data, allocator, subject, 0, options);
+        return code.inner_match(match_data, allocator, subject, null, options);
     }
 
     pub fn match(
@@ -284,7 +287,7 @@ pub const Code = extern struct {
             if (self.offset >= self.subject.len)
                 return null;
 
-            return self.code.inner_match(self.match_data, allocator, self.subject, self.offset, self.options);
+            return self.code.inner_match(self.match_data, allocator, self.subject, &self.offset, self.options);
         }
 
         pub fn free(it: *Iterator) void {
