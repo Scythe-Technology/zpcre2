@@ -1,6 +1,6 @@
 .{
-    .name = "zpcre2",
-    .version = "0.0.1",
+    .name = .zpcre2,
+    .version = "0.0.2",
     .dependencies = .{},
     .paths = .{
         "pcre2",
@@ -10,4 +10,5 @@
         "LICENSE.md",
         "PCRE2-LICENCE.md",
     },
+    .fingerprint = 0x4c12457a6848bca7,
 }
