@@ -15,9 +15,11 @@ pub fn build(b: *Build) !void {
     module.linkLibrary(pcre2);
 
     const tests = b.addTest(.{
-        .root_source_file = b.path("src/lib.zig"),
-        .target = target,
-        .optimize = optimize,
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/lib.zig"),
+            .target = target,
+            .optimize = optimize,
+        }),
     });
     tests.root_module.linkLibrary(pcre2);
 
@@ -33,10 +35,13 @@ pub fn buildPCRE2(
     target: Build.ResolvedTarget,
     optimize: std.builtin.OptimizeMode,
 ) *Build.Step.Compile {
-    const lib = b.addStaticLibrary(.{
+    const lib = b.addLibrary(.{
         .name = "pcre2",
-        .target = target,
-        .optimize = optimize,
+        .linkage = .static,
+        .root_module = b.createModule(.{
+            .target = target,
+            .optimize = optimize,
+        }),
     });
     lib.linkLibC();
 

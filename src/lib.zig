@@ -1,12 +1,12 @@
 const std = @import("std");
 
-extern fn pcre2_match_data_free_8(match_data: *MatchData) callconv(.C) void;
-extern fn pcre2_get_ovector_pointer_8(match_data: *MatchData) callconv(.C) [*]isize;
-extern fn pcre2_get_ovector_count_8(match_data: *MatchData) callconv(.C) u32;
+extern fn pcre2_match_data_free_8(match_data: *MatchData) callconv(.c) void;
+extern fn pcre2_get_ovector_pointer_8(match_data: *MatchData) callconv(.c) [*]isize;
+extern fn pcre2_get_ovector_count_8(match_data: *MatchData) callconv(.c) u32;
 extern fn pcre2_match_data_create_from_pattern_8(
     code: *const Code,
     gcontext: ?*GeneralContext,
-) callconv(.C) ?*MatchData;
+) callconv(.c) ?*MatchData;
 extern fn pcre2_match_8(
     code: *const Code,
     subject: [*]const u8,
@@ -15,7 +15,7 @@ extern fn pcre2_match_8(
     options: u32,
     match_data: *MatchData,
     mcontext: ?*MatchContext,
-) callconv(.C) c_int;
+) callconv(.c) c_int;
 extern fn pcre2_compile_8(
     pattern: [*]const u8,
     len: usize,
@@ -23,7 +23,7 @@ extern fn pcre2_compile_8(
     errorcode: *c_int,
     erroroffset: *usize,
     context: ?*CompileContext,
-) callconv(.C) ?*Code;
+) callconv(.c) ?*Code;
 extern fn pcre2_substitute_8(
     code: *const Code,
     subject: [*]const u8,
@@ -36,14 +36,14 @@ extern fn pcre2_substitute_8(
     replace_len: usize,
     buffer: [*]u8,
     buffer_len: *usize,
-) callconv(.C) c_int;
+) callconv(.c) c_int;
 extern fn pcre2_pattern_info_8(
     code: *const Code,
     what: u32,
     where: *anyopaque,
-) callconv(.C) c_int;
-extern fn pcre2_code_free_8(code: *Code) callconv(.C) void;
-extern fn pcre2_get_error_message_8(errorcode: c_int, buffer: [*]u8, bufflen: usize) callconv(.C) c_int;
+) callconv(.c) c_int;
+extern fn pcre2_code_free_8(code: *Code) callconv(.c) void;
+extern fn pcre2_get_error_message_8(errorcode: c_int, buffer: [*]u8, bufflen: usize) callconv(.c) c_int;
 
 pub const GeneralContext = opaque {};
 pub const MatchData = opaque {
